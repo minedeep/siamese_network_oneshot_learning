@@ -13,7 +13,7 @@ import numpy as np
 
 tf.keras.backend.clear_session()  # For easy reset of notebook state.
 
-class SiameseNetwork:
+class SiameseNetwork_Extended:
     """
     Construct Siamese network
     """
