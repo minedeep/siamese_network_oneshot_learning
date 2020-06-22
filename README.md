@@ -1,4 +1,4 @@
-# Siamese Networks with Triplet Loss for One-short Learning
+# Siamese Networks for One-short Learning
 
 The most widely used similary metric for comparing two feature vectors are Euclidean Distance and Cosine similarity. However, this selection is arbitrary. In practice, a metric can work better on one dataset but worse  on another dataset, and actually we can customize a metric, and integrate it into learning algorithms like K-NN. However, it's still very difficult to know which equation will work best for a dataset. The solution is we can learn the metric from the data and we call this process  metric learning.   
 Let say x1 and x2 are two feature vectors, 
