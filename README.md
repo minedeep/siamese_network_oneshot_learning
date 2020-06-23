@@ -6,7 +6,7 @@ Let say x1 and x2 are two feature vectors,
 
 We can rewrite this equation to make it parametrizable:
 
-![Modified Euclidean Metric]("/figures/mod_euc.png")
+![Modified Euclidean Metric](./figures/mod_euc.png)
 
 where A is a D x D matrix. If A is a identity matrix, the equation becomes the common Eucledian metric. If A is a normal diagnal matrix, values in the diagnal represents the importance of each dimension of the feature vectors in the metric calculation.
 
