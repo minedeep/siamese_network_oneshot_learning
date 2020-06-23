@@ -21,4 +21,5 @@ Details of the approach can be found in the [paper](https://www.cs.cmu.edu/~rsal
 
 Siamese Network is network that is comprised of twin networks tied by weights. Each network will try to learn the encodings of examples. The end of the two networks are joined by an energy funtion. This function computes some metric between the two encodings on each side. This is why one shot learning can also be formulated as a metric learning problem.  
 
-Below is the architecture of the siamese network implemented by Koch et al. We also follow this architecture for the Omniglot dataset.
+Below is the architecture of the siamese network implemented by [Koch et al.](https://www.cs.cmu.edu/~rsalakhu/papers/oneshot1.pdf). We also follow this architecture for the Omniglot dataset.
+![Siamese Network Architecture](./figures/siamesenet.png)
