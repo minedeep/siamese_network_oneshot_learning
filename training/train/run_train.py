@@ -27,7 +27,7 @@ def preprocess_config(c):
     return conf_dict
 
 parser = argparse.ArgumentParser(description='Run training')
-parser.add_argument("--config", type=str, default="./training/omniglot.conf"),
+parser.add_argument("--config", type=str, default="./training/omniglot.conf",
                      help = "Path to the config file.")
 
 # Run training

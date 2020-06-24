@@ -5,7 +5,7 @@ from shutil import copyfile
 
 import logging
 
-real_log = f"{datetime.datetime.now():%Y-%m-%d_%H:%M}.log"
+log_fn = f"{datetime.datetime.now():%Y-%m-%d_%H:%M}.log"
 
 logging.basicConfig(filename=log_fn,
         format='%(asctime)s - %(levelname)s - %(message)s',
