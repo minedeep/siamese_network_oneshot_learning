@@ -4,7 +4,7 @@ import configparser
 from train_setup import train
 
 def preprocess_config(c):
-    conf_dic = {}
+    config_dict = {}
 
     int_params = ['data.train_way', 
                   'data.test_way',
@@ -14,6 +14,7 @@ def preprocess_config(c):
                   'data.gpu',
                   'data.gpu',
                   'train.epochs',
+                  'train.restore',
                   'train.patience']
     float_params = ['train.lr']
 
@@ -24,7 +25,7 @@ def preprocess_config(c):
             config_dict[param] = float(c[param])
         else:
             config_dict[param] = c[param]
-    return conf_dict
+    return config_dict
 
 parser = argparse.ArgumentParser(description='Run training')
 parser.add_argument("--config", type=str, default="./training/omniglot.conf",

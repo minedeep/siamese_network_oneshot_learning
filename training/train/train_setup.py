@@ -16,9 +16,17 @@ logging.getLogger("PIL").setLevel(logging.WARNING)
 
 import numpy as np
 import tensorflow as tf
-tf.config.gpu.get_per_process_memory_growth(True)
+gpus = tf.config.list_physical_devices('GPU')
 
-from siamesenet.data import load
+if gpus:
+    try:
+        tf.config.experimental.set_memory_growth(gpus[0], True)
+    except RuntimeError as e:
+        # Memory growth must be set before GPUs have been initialized
+        print(e)
+
+
+from siamesenet.data.loader import load
 from siamesenet import TrainEngine
 from siamesenet.models import SiameseNetwork
 
@@ -33,7 +41,7 @@ def train(config):
         os.makedirs(model_dir)
 
     # create folder for logs
-    log_dir = config['model.log_dir']
+    log_dir = config['train.log_dir']
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
@@ -41,7 +49,7 @@ def train(config):
     log_fn = os.path.join(log_dir, log_fn)
     print(f"Logs in training can be found in {log_fn}")
 
-    data_dir = f"data/{config['data.dataset']}"
+    data_dir = f"{config['data.dataset_path']}"
     res = load(data_dir, config, ['train', 'val'])
 
     train_loader = res['train']
@@ -56,7 +64,7 @@ def train(config):
 
     # Setup training operations
     w, h, c = list(map(int, config['model.x_dim'].split(',')))
-    model = Siamesenetwork(w, h, c)
+    model = SiameseNetwork((w, h, c))
     if config['train.restore']:
         with tf.device(device_name):
             model.load(config['model.save_dir'])
@@ -89,7 +97,7 @@ def train(config):
         with tf.GradientTape() as tape:
             loss, acc = model(support, query, labels)
         gradients = tape.gradient(loss, model.trainable_variables)
-        optimizers.apply_gradients(zip(gradients, model.trainable_variables))
+        optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
         # log loss and accuracy for step
         train_loss(loss)
@@ -118,12 +126,11 @@ def train(config):
     def on_end_epoch(state):
         logging.info(f"Epoch {state['epoch']} ended.")
         epoch = state['epoch']
-        template = 'Epoch {}, Loss: {:10.6f}, Accuracy: {:5.3f},'\
-                   'Val Loss: {:10.6f}, Val Accuracy: {5.3f}'
-        logging.info(template.format(epoch + 1, train_loss.result(),
-                                      train_acc.result() *100,
-                                      val_loss.result(),
-                                      val_acc.result()*100))
+        template = 'Epoch {}, Loss: {:10.6f}, Accuracy: {:5.3f}, Val Loss: {:10.6f}, Val Accuracy: {:5.3f}'
+        logging.info(template.format(epoch + 1, train_loss.result().numpy(),
+                                      train_acc.result().numpy() *100,
+                                      val_loss.result().numpy(),
+                                      val_acc.result().numpy()*100))
         cur_loss = val_loss.result().numpy()
         if cur_loss < state['best_val_loss']:
             logging.info("Saving new best model with loss: {:10.6f}".format(cur_loss))
@@ -133,7 +140,7 @@ def train(config):
 
         # Early stopping
         patience = config['train.patience']
-        if len(val_losses > patience) \
+        if len(val_losses) > patience \
                 and max(val_losses[-patience:]) == val_losses[-1]:
             state['early_stopping_striggered'] = True
 
