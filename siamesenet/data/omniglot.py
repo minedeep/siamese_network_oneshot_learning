@@ -52,14 +52,15 @@ class DataLoader(object):
 
             # 
             support_batch = np.take(support, [i//self.n_way for i in range(self.n_way**2)], axis=0)
-            query_batch = tf.tile(query, [self.n_wqy, 1, 1, 1])
+            query_batch = tf.tile(query, [self.n_way, 1, 1, 1])
             
             support_batches[i_batch] = support_batch
             query_batches[i_batch] = query_batch
+            labels_batches[i_batch] = [i==j for i in range(self.n_way) for j in range(self.n_way)]
 
         support_batches = np.vstack(support_batches)
         query_batches = np.vstack(query_batches)
-        labels_batches[i_batch] = [i==j for i in range(self.n_way) for j in range(self.n_way)]
+        labels_batches= labels_batches.reshape([-1,1])
 
         return support_batches, query_batches, labels_batches
 
@@ -79,7 +80,7 @@ def data_to_dic(data_dir, splits):
             cur_alphabet_dic = {}
             for char in os.listdir(alphabet_path):
                 char_path = os.path.join(alphabet_path, char)
-                cur_alphabet_dic[char] = os.listdir(char_path)
+                cur_alphabet_dic[char] = [os.path.join(char_path, img_name) for img_name in os.listdir(char_path)]
             train_dic[alphabet] = cur_alphabet_dic
         res['train'] = train_dic
 
@@ -92,7 +93,7 @@ def data_to_dic(data_dir, splits):
             cur_alphabet_dic = {}
             for char in os.listdir(alphabet_path):
                 char_path = os.path.join(alphabet_path, char)
-                cur_alphabet_dic[char] = os.listdir(char_path)
+                cur_alphabet_dic[char] = [os.path.join(char_path, img_name) for img_name in os.listdir(char_path)]
             test_dic[alphabet] = cur_alphabet_dic
         res['test'] = test_dic
     return res
@@ -134,18 +135,19 @@ def load_omniglot(data_dir, config, splits):
         all_alphabets = list(train_dic.keys())
         n_alphabets = len(all_alphabets)
 
-        train_indexes = np.random.permutation(range(n_alphabets))[:0.8*n_alphabets]
+        n_train_alphabets = int(0.8*n_alphabets)
+        train_indexes = np.random.permutation(range(n_alphabets))[:n_train_alphabets]
 
         # sort the indexes in reverse order so we can pop the alphabet from the all alphabet list
         # the rest of the all_alphabet will be for validation
-        train_indexes.sort(reverse=True)
+        train_indexes = sorted(train_indexes, reverse=True)
         train_alphabets = []
         for index in train_indexes:
             train_alphabets.append(all_alphabets[index])
             all_alphabets.pop(index)
         val_alphabets = all_alphabets
 
-    if config['use_augmentation']:
+    if 'use_augmentation' in config and config['use_augmentation']:
         image_augmentor = create_augmentor()
     else:
         image_augmentor = None
@@ -157,7 +159,7 @@ def load_omniglot(data_dir, config, splits):
                 n_way = config['data.train_way'] 
                 split_alphabets = train_alphabets 
             else:
-                n_way = config['data.val_way'] 
+                n_way = config['data.test_way'] 
                 split_alphabets = val_alphabets 
 
         elif split in ['test']:
@@ -166,16 +168,20 @@ def load_omniglot(data_dir, config, splits):
             split_alphabets = list(data_dic[split].keys())
 
         n_images_per_char = len(split_dic[split_alphabets[0]][list(split_dic[split_alphabets[0]].keys())[0]])
-        data = np.zeros([len(split_alphabets) * len(split_dic[split_alphabets[0]]), 
+        max_n_char = max([len(split_dic[i]) for i in split_alphabets])
+        data = np.zeros([len(split_alphabets) * max_n_char, 
                           n_images_per_char,
                            WIDTH, HEIGHT, 1])
+        i_class = 0
+
         for i_alphabet, alphabet in enumerate(split_alphabets):
             for char in list(split_dic[alphabet].keys()): 
                 for i_img, img_path in enumerate(split_dic[alphabet][char]):
                     data[i_class, i_img, :, :, :] = load_and_preprocess_image(img_path, image_augmentor)
+                i_class += 1
 
         data_loader = DataLoader(data, 
-                         batch_size=config['batch_size'],
+                         batch_size=config['data.batch_size'],
                          n_classes = data.shape[0],
                          n_way = n_way)
 

@@ -1,22 +1,15 @@
 import os
 import tensorflow as tf
-import tf.keras.backend as keras
 
-from tf.keras.models import Model, Sequential
-from tf.keras.layers import Conv2D, MaxPool2D, Flatten, Dense, Input, Subtract, Lambda
-from tf.keras.optimizers import Adam, SGD
-from tf.keras.regularizers import l2
 
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import numpy as np
 
-from omniglot_loader import OmniglotLoader
-from modified_sgd import Modified_SGD
 
 tf.keras.backend.clear_session()  # For easy reset of notebook state.
 
-class SiameseNetwork:
+class SiameseNetwork(tf.keras.Model):
     """
     Construct Siamese network
     """
@@ -26,37 +19,37 @@ class SiameseNetwork:
             img_size: tuple (w, h, c)
             self_way: number of classes used in training
         """
-        super(SiameseNet, self).__init__()
+        super(SiameseNetwork, self).__init__()
         self.width, self.height, self.channel = img_size
         self.way = way
-        self.use_augmentation = use_augmentation
 
         # Conv_net 
         self.encoder = tf.keras.Sequential([
-                Conv2D(filters=64, kernel_size=10, padding='valid'),
-                BatchNormalization(),
-                ReLU(),
-                MaxPool2D((2,2)),
+                tf.keras.layers.Conv2D(filters=64, kernel_size=10, padding='valid'),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.ReLU(),
+                tf.keras.layers.MaxPool2D((2,2)),
 
-                Conv2D(filters=128, kernel_size=7, padding='valid'),
-                BatchNormalization(),
-                ReLU(),
-                MaxPool2D((2,2)),
+                tf.keras.layers.Conv2D(filters=128, kernel_size=7, padding='valid'),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.ReLU(),
+                tf.keras.layers.MaxPool2D((2,2)),
 
-                Conv2D(filters=128, kernel_size=4, padding='valid'),
-                BatchNormalization(),
-                ReLU(),
-                MaxPool2D((2,2)),
+                tf.keras.layers.Conv2D(filters=128, kernel_size=4, padding='valid'),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.ReLU(),
+                tf.keras.layers.MaxPool2D((2,2)),
 
-                Conv2D(filters=128, kernel_size=4, padding='valid'),
-                BatchNormalization(),
-                ReLU(),
+
+                tf.keras.layers.Conv2D(filters=128, kernel_size=4, padding='valid'),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.ReLU(),
                 
-                Flatten() ])
+                tf.keras.layers.Flatten() ])
         
         # Prediction layer
         self.dense = tf.keras.Sequential([
-            Dense(1, activation='sigmoid')
+            tf.keras.layers.Dense(1, activation='sigmoid')
             ])
 
     @tf.function
@@ -79,7 +72,7 @@ class SiameseNetwork:
         prediction = self.dense(l1_dist)
 
         # loss and accuracy
-        loss = tf.reduce_mean(tf.losses.binary_crossentropy(y_true=labels, y_pred=predictions))
+        loss = tf.reduce_mean(tf.losses.binary_crossentropy(y_true=labels, y_pred=prediction))
         labels_pred = tf.cast(tf.argmax(tf.reshape(prediction, [-1, self.way]), -1), tf.float32)
         labels_true = tf.tile(tf.range(0, self.way, dtype=tf.float32), [n//self.way**2])
         eq = tf.cast(tf.equal(labels_pred, labels_true), tf.float32)
@@ -110,7 +103,7 @@ class SiameseNetwork:
         """
 
         encoder_path = os.path.join(dir, 'encoder.h5')
-        self.encoder(tf.zeros([1, self.w, self.h, slef.c]))
+        self.encoder(tf.zeros([1, self.width, self.height, self.channel]))
         self.encoder.load_weights(encoder_path)
         dense_path = os.path.join(dir, 'dense.h5')
         self.dense(tf.zeros([1, 4608]))

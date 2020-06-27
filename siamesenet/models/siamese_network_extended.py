@@ -50,7 +50,7 @@ class SiameseNetwork_Extended:
                     kernel_regularizer=l2(l2_regularization_penalization['Conv3'])),
                 MaxPool2D((2,2)),
 
-                Conv2D(filters=128, kernel_size=4, padding='valid'),
+                Conv2D(filters=128, kernel_size=4, padding='valid',
                     activation='relu', 
                     kernel_regularizer=l2(l2_regularization_penalization['Conv4'])),
                 
